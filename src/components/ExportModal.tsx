@@ -11,7 +11,7 @@ import {
   Loader2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { VideoSegment, CutMode, ExportFormat, ExportQuality, ExportType } from '../types';
+import { VideoSegment, CutMode, ExportFormat, ExportQuality, ExportType, OutroConfig } from '../types';
 import {
   computeEffectiveIntervals,
   renderIntervalToBlob,
@@ -29,6 +29,7 @@ interface ExportModalProps {
   segments: VideoSegment[];
   cutMode: CutMode;
   fileName: string;
+  outroConfig?: OutroConfig;
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({
@@ -39,6 +40,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   segments,
   cutMode,
   fileName,
+  outroConfig,
 }) => {
   const [exportType, setExportType] = useState<ExportType>('merged');
   const [format, setFormat] = useState<ExportFormat>('webm');
@@ -73,7 +75,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           (pct, part, total) => {
             setProgressPercent(Math.round(pct));
             setStatusMessage(`Rendering and stitching part ${part} of ${total} (${Math.round(pct)}%)...`);
-          }
+          },
+          outroConfig
         );
 
         setStatusMessage('Generating download...');
@@ -168,9 +171,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-white">Export Video Portions</h3>
-              <p className="text-xs text-slate-400">
-                {intervals.length} {intervals.length === 1 ? 'portion' : 'portions'} • Total duration:{' '}
-                <span className="font-mono text-bio-emerald">{formatTime(totalExportDuration)}</span>
+              <p className="text-xs text-slate-400 flex items-center gap-2">
+                <span>
+                  {intervals.length} {intervals.length === 1 ? 'portion' : 'portions'} • Total duration:{' '}
+                  <span className="font-mono text-bio-emerald">{formatTime(totalExportDuration)}</span>
+                </span>
+                {outroConfig?.enabled && (
+                  <span className="px-1.5 py-0.5 rounded bg-bio-violet/20 border border-bio-violet/40 text-[10px] text-bio-violet font-semibold">
+                    + Outro Scene ({outroConfig.type === 'custom_video' ? `${Math.round(outroConfig.duration || 3)}s` : `${outroConfig.durationSeconds}s`})
+                  </span>
+                )}
               </p>
             </div>
           </div>

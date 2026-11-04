@@ -12,7 +12,9 @@ import {
   Layers,
   ChevronRight,
   Filter,
-  Sparkles
+  Sparkles,
+  Clapperboard,
+  Plus
 } from 'lucide-react';
 import { VideoSegment, CutMode, SEGMENT_COLORS } from '../types';
 import { formatTime, parseTimeToSeconds } from '../utils/timeFormat';
@@ -28,6 +30,8 @@ interface SegmentsListProps {
   cutMode: CutMode;
   onToggleCutMode: (mode: CutMode) => void;
   onOpenExportModal: () => void;
+  onOpenOutroStudio?: () => void;
+  isOutroEnabled?: boolean;
   totalKeptDuration: number;
 }
 
@@ -42,6 +46,8 @@ export const SegmentsList: React.FC<SegmentsListProps> = ({
   cutMode,
   onToggleCutMode,
   onOpenExportModal,
+  onOpenOutroStudio,
+  isOutroEnabled = false,
   totalKeptDuration,
 }) => {
   const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
@@ -281,6 +287,44 @@ export const SegmentsList: React.FC<SegmentsListProps> = ({
           })
         )}
       </div>
+
+      {/* Outro Ending Scene Quick Access Banner */}
+      {onOpenOutroStudio && (
+        <div
+          onClick={onOpenOutroStudio}
+          className={`mt-3 p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+            isOutroEnabled
+              ? 'bg-bio-violet/15 border-bio-violet shadow-bio-violet'
+              : 'bg-bio-surface/60 hover:bg-bio-surface border-bio-border hover:border-bio-violet/40'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <div className={`p-1.5 rounded-lg border ${
+              isOutroEnabled ? 'bg-bio-violet text-white border-bio-violet' : 'bg-bio-void text-bio-violet border-bio-border'
+            }`}>
+              <Clapperboard className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>Final Scene / Outro</span>
+                {isOutroEnabled && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-bio-violet text-white text-[9px] font-mono">
+                    ACTIVE
+                  </span>
+                )}
+              </p>
+              <p className="text-[10px] text-slate-400">
+                {isOutroEnabled
+                  ? 'Ending scene will be automatically attached on export'
+                  : 'Add your own final few seconds clip or bio-card'}
+              </p>
+            </div>
+          </div>
+          <span className="text-xs text-bio-violet font-semibold hover:underline">
+            {isOutroEnabled ? 'Edit' : 'Configure'}
+          </span>
+        </div>
+      )}
 
       {/* Bottom Summary Bar & Export Action Button */}
       <div className="mt-4 pt-3 border-t border-bio-border flex flex-wrap items-center justify-between gap-3">

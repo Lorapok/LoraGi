@@ -17,6 +17,18 @@ LoraGi is a client-side video cutting, slicing, and segmenting web application d
   - Interactive playhead scrubbing with real-time hover timestamp previews.
   - Zoomable timeline (1x to 6x zoom) for ultra-accurate sub-second micro-cuts.
 
+- **Direct Web & Flow Music Video Importer**:
+  - Direct import from any video URL (`.mp4`, `.webm`, `.mov`, etc.).
+  - Native parser for Google Flow Music session links (`flowmusic.app/session/...`).
+  - Edge streaming proxy with full CORS support (`/api/resolve-video`).
+  - In-browser instant streaming without manual disk downloads.
+
+- **Outro & Ending Scene Studio**:
+  - Append custom ending scene / outro to the final seconds of merged exports.
+  - **Bio-Digital Outro Card**: Animated cybernetic title, creator credits, and logo pulse.
+  - **Custom Ending Video**: Upload your own outro clip to stitch at the end.
+  - Configurable duration, accent colors, and live canvas preview.
+
 - **Dual Cut Modes**:
   - **Keep Portions (Extract Mode)**: Retain only the marked sections and export.
   - **Remove Portions (Ripple Cut Mode)**: Cut out marked scenes and preserve the rest of the video seamlessly.

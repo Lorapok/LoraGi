@@ -1,15 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Film, ShieldCheck, Zap, Sparkles, PlayCircle } from 'lucide-react';
+import { Upload, Film, ShieldCheck, Zap, Sparkles, PlayCircle, Link as LinkIcon } from 'lucide-react';
 
 interface DropzoneProps {
   onVideoSelected: (file: File) => void;
   onLoadSample: () => void;
+  onOpenUrlImport: () => void;
   isLoadingSample?: boolean;
 }
 
 export const Dropzone: React.FC<DropzoneProps> = ({
   onVideoSelected,
   onLoadSample,
+  onOpenUrlImport,
   isLoadingSample = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -98,29 +100,37 @@ export const Dropzone: React.FC<DropzoneProps> = ({
           </div>
 
           {/* Action Button & Sample Video Option */}
-          <div className="flex flex-wrap items-center justify-center gap-4" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-wrap items-center justify-center gap-3" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-bio-emerald to-bio-cyan text-bio-void font-bold text-sm tracking-wide shadow-bio-emerald hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+              className="px-5 py-3 rounded-xl bg-gradient-to-r from-bio-emerald to-bio-cyan text-bio-void font-bold text-sm tracking-wide shadow-bio-emerald hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
             >
               <Film className="w-4 h-4" />
-              Choose Video File
+              Choose File
+            </button>
+
+            <button
+              onClick={onOpenUrlImport}
+              className="px-5 py-3 rounded-xl bg-bio-surface hover:bg-bio-hover border border-bio-cyan/40 text-bio-cyan font-bold text-sm tracking-wide shadow-bio-cyan hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <LinkIcon className="w-4 h-4" />
+              Import Link / Flow Music
             </button>
 
             <button
               onClick={onLoadSample}
               disabled={isLoadingSample}
-              className="px-6 py-3 rounded-xl bg-bio-surface hover:bg-bio-hover border border-bio-border hover:border-bio-emerald/40 text-slate-200 font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-5 py-3 rounded-xl bg-bio-surface hover:bg-bio-hover border border-bio-border hover:border-bio-emerald/40 text-slate-200 font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {isLoadingSample ? (
                 <>
                   <Zap className="w-4 h-4 text-bio-amber animate-spin" />
-                  Generating Sample...
+                  Generating...
                 </>
               ) : (
                 <>
                   <PlayCircle className="w-4 h-4 text-bio-emerald" />
-                  Try With Sample Video
+                  Sample Video
                 </>
               )}
             </button>
