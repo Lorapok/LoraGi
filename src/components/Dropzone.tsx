@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Film, ShieldCheck, Zap, Sparkles, PlayCircle, Link as LinkIcon } from 'lucide-react';
+import { Upload, Film, ShieldCheck, Zap, Sparkles, PlayCircle, Link as LinkIcon, BookOpen } from 'lucide-react';
+import { YoutubeIcon } from './icons/YoutubeIcon';
 
 interface DropzoneProps {
   onVideoSelected: (file: File) => void;
   onLoadSample: () => void;
   onOpenUrlImport: () => void;
+  onOpenInstructions?: () => void;
   isLoadingSample?: boolean;
 }
 
@@ -12,6 +14,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
   onVideoSelected,
   onLoadSample,
   onOpenUrlImport,
+  onOpenInstructions,
   isLoadingSample = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -114,7 +117,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
               className="px-5 py-3 rounded-xl bg-bio-surface hover:bg-bio-hover border border-bio-cyan/40 text-bio-cyan font-bold text-sm tracking-wide shadow-bio-cyan hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
             >
               <LinkIcon className="w-4 h-4" />
-              Import Link / Flow Music
+              <span>Import YouTube / Flow Music</span>
             </button>
 
             <button
@@ -134,6 +137,16 @@ export const Dropzone: React.FC<DropzoneProps> = ({
                 </>
               )}
             </button>
+
+            {onOpenInstructions && (
+              <button
+                onClick={onOpenInstructions}
+                className="px-5 py-3 rounded-xl bg-bio-surface/80 hover:bg-bio-surface border border-bio-border hover:border-bio-cyan/50 text-slate-300 hover:text-white font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <BookOpen className="w-4 h-4 text-bio-cyan" />
+                <span>Instructions</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
