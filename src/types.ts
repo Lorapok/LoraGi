@@ -26,6 +26,18 @@ export interface VideoMetadata {
   estimatedFps: number;
 }
 
+export interface OutroConfig {
+  enabled: boolean;
+  type: 'custom_video' | 'bio_card';
+  videoFile?: File | null;
+  videoSrc?: string | null;
+  duration?: number;
+  title: string;
+  subtitle: string;
+  durationSeconds: number;
+  themeColor: string;
+}
+
 export interface ExportProgress {
   isExporting: boolean;
   type: ExportType;

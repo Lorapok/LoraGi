@@ -7,8 +7,10 @@ import { SegmentsList } from './components/SegmentsList';
 import { ExportModal } from './components/ExportModal';
 import { ShortcutsModal } from './components/ShortcutsModal';
 import { MetadataDrawer } from './components/MetadataDrawer';
+import { UrlImportModal } from './components/UrlImportModal';
+import { OutroStudioModal } from './components/OutroStudioModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
-import { VideoSegment, CutMode, VideoMetadata, SEGMENT_COLORS } from './types';
+import { VideoSegment, CutMode, VideoMetadata, SEGMENT_COLORS, OutroConfig } from './types';
 import { formatTime } from './utils/timeFormat';
 import { generateSampleVideo } from './utils/sampleGenerator';
 import { computeEffectiveIntervals } from './utils/videoProcessor';
@@ -30,6 +32,18 @@ export const App: React.FC = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
   const [isMetadataOpen, setIsMetadataOpen] = useState<boolean>(false);
+  const [isUrlImportOpen, setIsUrlImportOpen] = useState<boolean>(false);
+  const [isOutroStudioOpen, setIsOutroStudioOpen] = useState<boolean>(false);
+
+  // Outro ending scene configuration
+  const [outroConfig, setOutroConfig] = useState<OutroConfig>({
+    enabled: false,
+    type: 'bio_card',
+    title: 'Created With LoraGi',
+    subtitle: 'Lorapok Labs • Open-Source Products That Feel Alive',
+    durationSeconds: 3,
+    themeColor: '#a855f7',
+  });
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewTimerRef = useRef<number | null>(null);
@@ -458,9 +472,12 @@ export const App: React.FC = () => {
         hasVideo={!!videoSrc}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
         onOpenMetadata={() => setIsMetadataOpen(true)}
+        onOpenUrlImport={() => setIsUrlImportOpen(true)}
+        onOpenOutroStudio={() => setIsOutroStudioOpen(true)}
         onResetVideo={handleResetVideo}
         totalSegmentsCount={segments.filter((s) => s.enabled).length}
         totalKeptDurationFormatted={formatTime(totalKeptDuration)}
+        isOutroEnabled={outroConfig.enabled}
       />
 
       {/* Main Workspace */}
@@ -470,6 +487,7 @@ export const App: React.FC = () => {
           <Dropzone
             onVideoSelected={handleVideoSelected}
             onLoadSample={handleLoadSample}
+            onOpenUrlImport={() => setIsUrlImportOpen(true)}
             isLoadingSample={isLoadingSample}
           />
         ) : (
@@ -518,6 +536,8 @@ export const App: React.FC = () => {
                 cutMode={cutMode}
                 onToggleCutMode={setCutMode}
                 onOpenExportModal={() => setIsExportModalOpen(true)}
+                onOpenOutroStudio={() => setIsOutroStudioOpen(true)}
+                isOutroEnabled={outroConfig.enabled}
                 totalKeptDuration={totalKeptDuration}
               />
             </div>
@@ -556,6 +576,30 @@ export const App: React.FC = () => {
         segments={segments}
         cutMode={cutMode}
         fileName={videoFile?.name || 'loragi_cut'}
+        outroConfig={outroConfig}
+      />
+
+      <UrlImportModal
+        isOpen={isUrlImportOpen}
+        onClose={() => setIsUrlImportOpen(false)}
+        onVideoLoaded={(file) => {
+          handleVideoSelected(file);
+          addToast(`Imported ${file.name} from URL!`, 'success');
+        }}
+      />
+
+      <OutroStudioModal
+        isOpen={isOutroStudioOpen}
+        onClose={() => setIsOutroStudioOpen(false)}
+        config={outroConfig}
+        onSaveConfig={(cfg) => {
+          setOutroConfig(cfg);
+          if (cfg.enabled) {
+            addToast('Outro ending scene configured and enabled!', 'success');
+          } else {
+            addToast('Outro scene disabled', 'info');
+          }
+        }}
       />
 
       <ShortcutsModal

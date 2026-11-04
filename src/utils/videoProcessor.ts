@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { VideoSegment, CutMode, ExportFormat, ExportQuality } from '../types';
+import { VideoSegment, CutMode, ExportFormat, ExportQuality, OutroConfig } from '../types';
+import { drawBioOutroFrame } from './outroRenderer';
 
 export interface ExportInterval {
   start: number;
@@ -237,14 +238,15 @@ export async function renderIntervalToBlob(
 }
 
 /**
- * Merges multiple intervals into a single continuous video Blob
+ * Merges multiple intervals into a single continuous video Blob, with optional ending outro scene
  */
 export async function renderMergedIntervalsToBlob(
   videoSrc: string,
   intervals: ExportInterval[],
   format: ExportFormat = 'webm',
   quality: ExportQuality = 'high',
-  onProgress?: (percent: number, currentPart: number, totalParts: number) => void
+  onProgress?: (percent: number, currentPart: number, totalParts: number) => void,
+  outroConfig?: OutroConfig
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (intervals.length === 0) {
@@ -262,7 +264,12 @@ export async function renderMergedIntervalsToBlob(
       const width = video.videoWidth || 1280;
       const height = video.videoHeight || 720;
 
-      const totalMergeDuration = intervals.reduce((acc, curr) => acc + (curr.end - curr.start), 0);
+      const mainIntervalsDuration = intervals.reduce((acc, curr) => acc + (curr.end - curr.start), 0);
+      const outroDuration = outroConfig?.enabled
+        ? (outroConfig.type === 'custom_video' ? (outroConfig.duration || 3) : outroConfig.durationSeconds || 3)
+        : 0;
+
+      const totalMergeDuration = mainIntervalsDuration + outroDuration;
       if (totalMergeDuration <= 0.1) {
         reject(new Error('Total merged duration is too short.'));
         return;
@@ -325,10 +332,75 @@ export async function renderMergedIntervalsToBlob(
       let completedDurationBefore = 0;
       let animationId: number;
 
+      // Play outro if enabled
+      const playOutro = () => {
+        if (!outroConfig?.enabled) {
+          if (recorder.state === 'recording') recorder.stop();
+          return;
+        }
+
+        const totalSteps = intervals.length + 1;
+        const outroStartTime = performance.now();
+
+        if (outroConfig.type === 'custom_video' && outroConfig.videoSrc) {
+          const outroVideo = document.createElement('video');
+          outroVideo.src = outroConfig.videoSrc;
+          outroVideo.crossOrigin = 'anonymous';
+          outroVideo.muted = false;
+          outroVideo.playsInline = true;
+
+          const drawCustomOutro = () => {
+            if (outroVideo.currentTime >= (outroConfig.duration || outroVideo.duration) || outroVideo.ended) {
+              outroVideo.pause();
+              cancelAnimationFrame(animationId);
+              if (recorder.state === 'recording') recorder.stop();
+              return;
+            }
+
+            ctx.drawImage(outroVideo, 0, 0, width, height);
+            const totalElapsed = mainIntervalsDuration + Math.min(outroDuration, outroVideo.currentTime);
+            const progress = Math.min(100, Math.max(0, (totalElapsed / totalMergeDuration) * 100));
+            onProgress?.(progress, totalSteps, totalSteps);
+
+            animationId = requestAnimationFrame(drawCustomOutro);
+          };
+
+          outroVideo.onloadedmetadata = () => {
+            outroVideo.play().then(() => {
+              animationId = requestAnimationFrame(drawCustomOutro);
+            }).catch(() => {
+              if (recorder.state === 'recording') recorder.stop();
+            });
+          };
+          outroVideo.onerror = () => {
+            if (recorder.state === 'recording') recorder.stop();
+          };
+        } else {
+          // Animated Bio-Card Outro
+          const drawBioCardOutro = () => {
+            const elapsedSec = (performance.now() - outroStartTime) / 1000;
+
+            if (elapsedSec >= outroDuration) {
+              cancelAnimationFrame(animationId);
+              if (recorder.state === 'recording') recorder.stop();
+              return;
+            }
+
+            drawBioOutroFrame(ctx, width, height, elapsedSec, outroDuration, outroConfig);
+            const totalElapsed = mainIntervalsDuration + elapsedSec;
+            const progress = Math.min(100, Math.max(0, (totalElapsed / totalMergeDuration) * 100));
+            onProgress?.(progress, totalSteps, totalSteps);
+
+            animationId = requestAnimationFrame(drawBioCardOutro);
+          };
+
+          animationId = requestAnimationFrame(drawBioCardOutro);
+        }
+      };
+
       const playNextInterval = () => {
         if (currentIntervalIndex >= intervals.length) {
-          if (recorder.state === 'recording') recorder.stop();
-          cancelAnimationFrame(animationId);
+          playOutro();
           return;
         }
 
@@ -361,7 +433,7 @@ export async function renderMergedIntervalsToBlob(
         const totalElapsedSoFar = completedDurationBefore + currentPartElapsed;
         const progress = Math.min(100, Math.max(0, (totalElapsedSoFar / totalMergeDuration) * 100));
 
-        onProgress?.(progress, currentIntervalIndex + 1, intervals.length);
+        onProgress?.(progress, currentIntervalIndex + 1, intervals.length + (outroConfig?.enabled ? 1 : 0));
 
         animationId = requestAnimationFrame(drawIntervalLoop);
       };

@@ -1,23 +1,29 @@
 import React from 'react';
-import { Scissors, HelpCircle, Info, ExternalLink, RefreshCw } from 'lucide-react';
+import { Scissors, HelpCircle, Info, ExternalLink, RefreshCw, Link as LinkIcon, Clapperboard } from 'lucide-react';
 import { VaultieMascot } from './VaultieMascot';
 
 interface HeaderProps {
   hasVideo: boolean;
   onOpenShortcuts: () => void;
   onOpenMetadata: () => void;
+  onOpenUrlImport: () => void;
+  onOpenOutroStudio: () => void;
   onResetVideo: () => void;
   totalSegmentsCount: number;
   totalKeptDurationFormatted: string;
+  isOutroEnabled: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   hasVideo,
   onOpenShortcuts,
   onOpenMetadata,
+  onOpenUrlImport,
+  onOpenOutroStudio,
   onResetVideo,
   totalSegmentsCount,
   totalKeptDurationFormatted,
+  isOutroEnabled,
 }) => {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-bio-border bg-bio-void/90 backdrop-blur-xl px-4 lg:px-8 py-3.5 transition-all">
@@ -72,6 +78,29 @@ export const Header: React.FC<HeaderProps> = ({
 
           {hasVideo && (
             <>
+              <button
+                onClick={onOpenOutroStudio}
+                title="Configure Ending Scene / Outro"
+                className={`p-2 rounded-lg border text-xs flex items-center gap-1.5 transition-all ${
+                  isOutroEnabled
+                    ? 'bg-bio-violet/20 border-bio-violet text-white shadow-bio-violet'
+                    : 'bg-bio-surface hover:bg-bio-hover border-bio-border text-slate-300 hover:text-white'
+                }`}
+              >
+                <Clapperboard className="w-4 h-4 text-bio-violet" />
+                <span className="hidden sm:inline">Outro Scene</span>
+                {isOutroEnabled && <span className="w-1.5 h-1.5 rounded-full bg-bio-violet animate-pulse" />}
+              </button>
+
+              <button
+                onClick={onOpenUrlImport}
+                title="Import video from Link / Flow Music"
+                className="p-2 rounded-lg bg-bio-surface hover:bg-bio-hover border border-bio-border hover:border-bio-cyan/40 text-slate-300 hover:text-white transition-all text-xs flex items-center gap-1.5"
+              >
+                <LinkIcon className="w-4 h-4 text-bio-cyan" />
+                <span className="hidden sm:inline">Import Link</span>
+              </button>
+
               <button
                 onClick={onOpenMetadata}
                 title="View Video Metadata"
