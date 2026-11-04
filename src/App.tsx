@@ -6,6 +6,7 @@ import { Timeline } from './components/Timeline';
 import { SegmentsList } from './components/SegmentsList';
 import { ExportModal } from './components/ExportModal';
 import { ShortcutsModal } from './components/ShortcutsModal';
+import { InstructionsModal } from './components/InstructionsModal';
 import { MetadataDrawer } from './components/MetadataDrawer';
 import { UrlImportModal } from './components/UrlImportModal';
 import { OutroStudioModal } from './components/OutroStudioModal';
@@ -31,6 +32,7 @@ export const App: React.FC = () => {
   // Modals state
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
+  const [isInstructionsOpen, setIsInstructionsOpen] = useState<boolean>(false);
   const [isMetadataOpen, setIsMetadataOpen] = useState<boolean>(false);
   const [isUrlImportOpen, setIsUrlImportOpen] = useState<boolean>(false);
   const [isOutroStudioOpen, setIsOutroStudioOpen] = useState<boolean>(false);
@@ -471,6 +473,7 @@ export const App: React.FC = () => {
       <Header
         hasVideo={!!videoSrc}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
+        onOpenInstructions={() => setIsInstructionsOpen(true)}
         onOpenMetadata={() => setIsMetadataOpen(true)}
         onOpenUrlImport={() => setIsUrlImportOpen(true)}
         onOpenOutroStudio={() => setIsOutroStudioOpen(true)}
@@ -488,6 +491,7 @@ export const App: React.FC = () => {
             onVideoSelected={handleVideoSelected}
             onLoadSample={handleLoadSample}
             onOpenUrlImport={() => setIsUrlImportOpen(true)}
+            onOpenInstructions={() => setIsInstructionsOpen(true)}
             isLoadingSample={isLoadingSample}
           />
         ) : (
@@ -586,6 +590,7 @@ export const App: React.FC = () => {
           handleVideoSelected(file);
           addToast(`Imported ${file.name} from URL!`, 'success');
         }}
+        onOpenInstructions={() => setIsInstructionsOpen(true)}
       />
 
       <OutroStudioModal
@@ -600,6 +605,13 @@ export const App: React.FC = () => {
             addToast('Outro scene disabled', 'info');
           }
         }}
+      />
+
+      <InstructionsModal
+        isOpen={isInstructionsOpen}
+        onClose={() => setIsInstructionsOpen(false)}
+        onOpenUrlImport={() => setIsUrlImportOpen(true)}
+        onOpenOutroStudio={() => setIsOutroStudioOpen(true)}
       />
 
       <ShortcutsModal

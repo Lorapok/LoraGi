@@ -1,10 +1,11 @@
 import React from 'react';
-import { Scissors, HelpCircle, Info, ExternalLink, RefreshCw, Link as LinkIcon, Clapperboard } from 'lucide-react';
+import { Scissors, HelpCircle, Info, ExternalLink, RefreshCw, Link as LinkIcon, Clapperboard, BookOpen } from 'lucide-react';
 import { VaultieMascot } from './VaultieMascot';
 
 interface HeaderProps {
   hasVideo: boolean;
   onOpenShortcuts: () => void;
+  onOpenInstructions: () => void;
   onOpenMetadata: () => void;
   onOpenUrlImport: () => void;
   onOpenOutroStudio: () => void;
@@ -17,6 +18,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   hasVideo,
   onOpenShortcuts,
+  onOpenInstructions,
   onOpenMetadata,
   onOpenUrlImport,
   onOpenOutroStudio,
@@ -120,6 +122,15 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             </>
           )}
+
+          <button
+            onClick={onOpenInstructions}
+            title="User Guide & YouTube Instructions"
+            className="p-2 rounded-lg bg-bio-surface hover:bg-bio-hover border border-bio-border hover:border-bio-cyan/40 text-slate-300 hover:text-white transition-all text-xs flex items-center gap-1.5"
+          >
+            <BookOpen className="w-4 h-4 text-bio-cyan" />
+            <span className="hidden sm:inline">Instructions</span>
+          </button>
 
           <button
             onClick={onOpenShortcuts}

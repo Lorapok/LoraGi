@@ -149,6 +149,125 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
       }
     }
 
+    // Case C: YouTube Video / Shorts / Embeds
+    const isYouTube = parsedTarget.hostname.includes('youtube.com') || parsedTarget.hostname.includes('youtu.be');
+    if (isYouTube) {
+      let videoId: string | null = null;
+      if (parsedTarget.hostname.includes('youtu.be')) {
+        videoId = parsedTarget.pathname.slice(1).split('/')[0].split('?')[0];
+      } else if (parsedTarget.pathname.includes('/shorts/')) {
+        videoId = parsedTarget.pathname.split('/shorts/')[1]?.split('/')[0]?.split('?')[0];
+      } else if (parsedTarget.pathname.includes('/embed/')) {
+        videoId = parsedTarget.pathname.split('/embed/')[1]?.split('/')[0]?.split('?')[0];
+      } else {
+        videoId = parsedTarget.searchParams.get('v');
+      }
+
+      let title = 'YouTube Video';
+      let author = 'YouTube Creator';
+      let thumbnail = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '';
+
+      if (videoId) {
+        try {
+          const oembedRes = await fetch(
+            `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
+            { headers: { 'User-Agent': 'Mozilla/5.0' } }
+          );
+          if (oembedRes.ok) {
+            const oembedData = (await oembedRes.json()) as {
+              title?: string;
+              author_name?: string;
+              thumbnail_url?: string;
+            };
+            if (oembedData.title) title = oembedData.title;
+            if (oembedData.author_name) author = oembedData.author_name;
+            if (oembedData.thumbnail_url) thumbnail = oembedData.thumbnail_url;
+          }
+        } catch {}
+      }
+
+      // Try public Invidious instances with short timeouts
+      let directStreamUrl: string | null = null;
+      if (videoId) {
+        const publicInstances = [
+          'https://inv.nadeko.net',
+          'https://invidious.nerdvpn.de',
+          'https://yt.chocolatemoo53.com',
+          'https://invidious.tiekoetter.com',
+        ];
+
+        for (const instance of publicInstances) {
+          try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 1800);
+            const apiRes = await fetch(`${instance}/api/v1/videos/${videoId}`, {
+              signal: controller.signal,
+              headers: { 'User-Agent': 'Mozilla/5.0' },
+            });
+            clearTimeout(timeout);
+
+            if (apiRes.ok) {
+              const vidData = (await apiRes.json()) as {
+                formatStreams?: { url: string; qualityLabel: string; type: string }[];
+              };
+              const stream = vidData.formatStreams?.find(
+                (s) => s.type?.includes('video/mp4') && s.url
+              );
+              if (stream?.url) {
+                directStreamUrl = stream.url;
+                break;
+              }
+            }
+          } catch {}
+        }
+      }
+
+      const safeTitle = title.replace(/[^a-zA-Z0-9_\-\s]/g, '').trim() || 'youtube_video';
+      const cleanFileName = safeTitle.replace(/\s+/g, '_');
+
+      if (directStreamUrl) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            type: 'youtube_stream',
+            directStreamAvailable: true,
+            videoId,
+            title,
+            author,
+            thumbnail,
+            videoUrl: directStreamUrl,
+            proxyUrl: `/api/resolve-video?stream=1&url=${encodeURIComponent(directStreamUrl)}`,
+          }),
+          { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // YouTube Cipher protection active — provide rich video card and 1-click import helpers
+      return new Response(
+        JSON.stringify({
+          success: true,
+          type: 'youtube_guide',
+          directStreamAvailable: false,
+          videoId,
+          title,
+          author,
+          thumbnail,
+          videoUrl: targetUrl,
+          cleanFileName,
+          helperCommands: {
+            ytdlp: `yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" "${targetUrl}" -o "${cleanFileName}.mp4"`,
+            cobaltUrl: `https://cobalt.tools/`,
+          },
+          instructions: [
+            '1. Click Open Cobalt Web Downloader or copy the yt-dlp one-liner command below.',
+            '2. Save the MP4 file to your computer.',
+            '3. Drop the file directly into LoraGi to cut portions and append an outro scene.',
+          ],
+        }),
+        { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Case C: General Web Page with embedded video
     const pageRes = await fetch(targetUrl, {
       headers: {
