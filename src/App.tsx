@@ -7,6 +7,7 @@ import { SegmentsList } from './components/SegmentsList';
 import { ExportModal } from './components/ExportModal';
 import { ShortcutsModal } from './components/ShortcutsModal';
 import { MetadataDrawer } from './components/MetadataDrawer';
+import { ToastContainer, ToastMessage } from './components/Toast';
 import { VideoSegment, CutMode, VideoMetadata, SEGMENT_COLORS } from './types';
 import { formatTime } from './utils/timeFormat';
 import { generateSampleVideo } from './utils/sampleGenerator';
@@ -23,6 +24,7 @@ export const App: React.FC = () => {
   const [cutMode, setCutMode] = useState<CutMode>('keep');
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
   const [isLoadingSample, setIsLoadingSample] = useState<boolean>(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Modals state
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
@@ -31,6 +33,15 @@ export const App: React.FC = () => {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewTimerRef = useRef<number | null>(null);
+
+  const addToast = useCallback((text: string, type: 'success' | 'info' | 'warning' = 'info') => {
+    const id = `toast-${Date.now()}-${Math.random()}`;
+    setToasts((prev) => [...prev.slice(-4), { id, text, type }]);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   // Handle video file selection
   const handleVideoSelected = useCallback((file: File) => {
@@ -181,6 +192,7 @@ export const App: React.FC = () => {
       };
       setSegments([newSeg]);
       setSelectedSegmentId(newSeg.id);
+      addToast(`Marked In point at ${formatTime(currentTime)}`, 'success');
       return;
     }
 
@@ -194,7 +206,8 @@ export const App: React.FC = () => {
         return s;
       })
     );
-  }, [currentTime, duration, segments, selectedSegmentId]);
+    addToast(`Marked In point at ${formatTime(currentTime)}`, 'success');
+  }, [currentTime, duration, segments, selectedSegmentId, addToast]);
 
   // Set Out Point (] key)
   const handleSetOutPoint = useCallback(() => {
@@ -209,6 +222,7 @@ export const App: React.FC = () => {
       };
       setSegments([newSeg]);
       setSelectedSegmentId(newSeg.id);
+      addToast(`Marked Out point at ${formatTime(currentTime)}`, 'success');
       return;
     }
 
@@ -222,7 +236,8 @@ export const App: React.FC = () => {
         return s;
       })
     );
-  }, [currentTime, duration, segments, selectedSegmentId]);
+    addToast(`Marked Out point at ${formatTime(currentTime)}`, 'success');
+  }, [currentTime, duration, segments, selectedSegmentId, addToast]);
 
   // Split Segment at Current Playhead (S key)
   const handleSplitAtPlayhead = useCallback(() => {
@@ -251,6 +266,7 @@ export const App: React.FC = () => {
         prev.flatMap((s) => (s.id === intersecting.id ? [firstHalf, secondHalf] : s))
       );
       setSelectedSegmentId(secondHalf.id);
+      addToast(`Split portion at ${formatTime(currentTime)}`, 'info');
     } else {
       // Create a new segment starting at playhead
       const newSeg: VideoSegment = {
@@ -263,8 +279,9 @@ export const App: React.FC = () => {
       };
       setSegments((prev) => [...prev, newSeg]);
       setSelectedSegmentId(newSeg.id);
+      addToast(`Added new portion starting at ${formatTime(currentTime)}`, 'info');
     }
-  }, [currentTime, duration, segments]);
+  }, [currentTime, duration, segments, addToast]);
 
   // Add Segment Button
   const handleAddSegment = () => {
@@ -471,6 +488,7 @@ export const App: React.FC = () => {
                 onSetInPoint={handleSetInPoint}
                 onSetOutPoint={handleSetOutPoint}
                 onSplitAtPlayhead={handleSplitAtPlayhead}
+                onNotify={addToast}
                 fileName={videoFile?.name || 'video'}
               />
 
@@ -552,6 +570,8 @@ export const App: React.FC = () => {
         totalSegmentsCount={segments.filter((s) => s.enabled).length}
         totalKeptDuration={totalKeptDuration}
       />
+
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 };

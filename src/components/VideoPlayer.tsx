@@ -28,6 +28,7 @@ interface VideoPlayerProps {
   onSetInPoint: () => void;
   onSetOutPoint: () => void;
   onSplitAtPlayhead: () => void;
+  onNotify?: (text: string, type?: 'success' | 'info' | 'warning') => void;
   fileName: string;
 }
 
@@ -42,6 +43,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onSetInPoint,
   onSetOutPoint,
   onSplitAtPlayhead,
+  onNotify,
   fileName,
 }) => {
   const [volume, setVolume] = useState(1);
@@ -98,6 +100,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const handleCaptureFrame = () => {
     if (videoRef.current) {
       captureVideoFrame(videoRef.current, fileName.replace(/\.[^/.]+$/, ''));
+      onNotify?.('Frame snapshot captured and saved as PNG', 'success');
     }
   };
 
