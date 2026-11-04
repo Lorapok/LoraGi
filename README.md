@@ -1,7 +1,8 @@
 # LoraGi ⚡
 
 > **Bio-Digital Precision Video Slicer & Multi-Segment Segmenter**  
-> *Engineered by Lorapok Labs (`lorapok.tech`)*
+> *Engineered by Lorapok Labs (`lorapok.tech`)*  
+> **Live Web App:** [https://loragi.lorapok.tech](https://loragi.lorapok.tech)
 
 LoraGi is a client-side video cutting, slicing, and segmenting web application designed following the **Bio-Digital Synthesis & Biological UI** philosophy. It allows creators, researchers, and developers to trim, cut, and extract multiple portions of any video with frame-accurate millisecond precision directly in the browser—with zero server uploads and 100% local privacy.
 
