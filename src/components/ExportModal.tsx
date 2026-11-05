@@ -11,7 +11,7 @@ import {
   Loader2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { VideoSegment, CutMode, ExportFormat, ExportQuality, ExportType, OutroConfig } from '../types';
+import { VideoSegment, CutMode, ExportFormat, ExportQuality, ExportType, OutroConfig, ObjectRemovalMask } from '../types';
 import {
   computeEffectiveIntervals,
   renderIntervalToBlob,
@@ -30,6 +30,8 @@ interface ExportModalProps {
   cutMode: CutMode;
   fileName: string;
   outroConfig?: OutroConfig;
+  masks?: ObjectRemovalMask[];
+  onOpenPublish?: () => void;
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({
@@ -41,6 +43,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   cutMode,
   fileName,
   outroConfig,
+  masks,
+  onOpenPublish,
 }) => {
   const [exportType, setExportType] = useState<ExportType>('merged');
   const [format, setFormat] = useState<ExportFormat>('webm');
@@ -76,7 +80,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             setProgressPercent(Math.round(pct));
             setStatusMessage(`Rendering and stitching part ${part} of ${total} (${Math.round(pct)}%)...`);
           },
-          outroConfig
+          outroConfig,
+          masks
         );
 
         setStatusMessage('Generating download...');
@@ -97,7 +102,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             (pct) => {
               const overallPct = Math.round(((i + pct / 100) / intervals.length) * 100);
               setProgressPercent(overallPct);
-            }
+            },
+            masks
           );
 
           blobsToDownload.push({
@@ -126,7 +132,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             (pct) => {
               const overallPct = Math.round(((i + pct / 100) / intervals.length) * 100);
               setProgressPercent(overallPct);
-            }
+            },
+            masks
           );
 
           renderedPortions.push({
@@ -373,17 +380,32 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               )}
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setIsFinished(false);
-                setProgressPercent(0);
-                setStatusMessage('');
-              }}
-              className="px-5 py-2.5 rounded-xl bg-bio-emerald text-bio-void font-bold text-xs tracking-wide shadow-bio-emerald"
-            >
-              Export Again
-            </button>
+            <div className="flex items-center gap-2">
+              {onOpenPublish && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenPublish();
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-bio-violet text-white font-bold text-xs tracking-wide shadow-bio-violet hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Publish to Gallery</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFinished(false);
+                  setProgressPercent(0);
+                  setStatusMessage('');
+                }}
+                className="px-5 py-2.5 rounded-xl bg-bio-emerald text-bio-void font-bold text-xs tracking-wide shadow-bio-emerald"
+              >
+                Export Again
+              </button>
+            </div>
           )}
         </div>
       </div>

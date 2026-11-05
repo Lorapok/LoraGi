@@ -38,6 +38,20 @@ export interface OutroConfig {
   themeColor: string;
 }
 
+export interface ObjectRemovalMask {
+  id: string;
+  name: string;
+  x: number; // percentage (0 - 100)
+  y: number; // percentage (0 - 100)
+  width: number; // percentage (0 - 100)
+  height: number; // percentage (0 - 100)
+  method: 'content_aware' | 'smart_blur' | 'background_patch';
+  featherRadius: number;
+  startSec: number;
+  endSec: number;
+  enabled: boolean;
+}
+
 export interface ExportProgress {
   isExporting: boolean;
   type: ExportType;

@@ -10,13 +10,26 @@ import { InstructionsModal } from './components/InstructionsModal';
 import { MetadataDrawer } from './components/MetadataDrawer';
 import { UrlImportModal } from './components/UrlImportModal';
 import { OutroStudioModal } from './components/OutroStudioModal';
+import { GalleryView } from './components/GalleryView';
+import { AuthModal } from './components/AuthModal';
+import { PublishModal } from './components/PublishModal';
+import { AiVideoGeneratorModal } from './components/AiVideoGeneratorModal';
+import { ObjectRemovalModal } from './components/ObjectRemovalModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
-import { VideoSegment, CutMode, VideoMetadata, SEGMENT_COLORS, OutroConfig } from './types';
+import {
+  VideoSegment,
+  CutMode,
+  VideoMetadata,
+  SEGMENT_COLORS,
+  OutroConfig,
+  ObjectRemovalMask,
+} from './types';
 import { formatTime } from './utils/timeFormat';
 import { generateSampleVideo } from './utils/sampleGenerator';
 import { computeEffectiveIntervals } from './utils/videoProcessor';
 
 export const App: React.FC = () => {
+  const [activeView, setActiveView] = useState<'studio' | 'gallery'>('studio');
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -36,6 +49,24 @@ export const App: React.FC = () => {
   const [isMetadataOpen, setIsMetadataOpen] = useState<boolean>(false);
   const [isUrlImportOpen, setIsUrlImportOpen] = useState<boolean>(false);
   const [isOutroStudioOpen, setIsOutroStudioOpen] = useState<boolean>(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState<boolean>(false);
+  const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState<boolean>(false);
+  const [isObjectRemovalOpen, setIsObjectRemovalOpen] = useState<boolean>(false);
+
+  // Object Removal inpainting masks
+  const [objectRemovalMasks, setObjectRemovalMasks] = useState<ObjectRemovalMask[]>([]);
+
+  // Publish target info
+  const [publishTarget, setPublishTarget] = useState<{
+    src: string | null;
+    title: string;
+    duration: number;
+  }>({
+    src: null,
+    title: 'My LoraGi Creation',
+    duration: 30,
+  });
 
   // Outro ending scene configuration
   const [outroConfig, setOutroConfig] = useState<OutroConfig>({
@@ -61,7 +92,7 @@ export const App: React.FC = () => {
 
   // Handle video file selection
   const handleVideoSelected = useCallback((file: File) => {
-    if (videoSrc) {
+    if (videoSrc && videoSrc.startsWith('blob:')) {
       URL.revokeObjectURL(videoSrc);
     }
     const url = URL.createObjectURL(file);
@@ -69,6 +100,7 @@ export const App: React.FC = () => {
     setVideoSrc(url);
     setCurrentTime(0);
     setIsPlaying(false);
+    setActiveView('studio');
 
     // Initial default metadata
     setMetadata({
@@ -123,8 +155,8 @@ export const App: React.FC = () => {
           : null
       );
 
-      // Initialize with 2 default logical portions for instant productivity
-      if (dur > 0) {
+      // Initialize with default logical portions
+      if (dur > 0 && segments.length === 0) {
         const seg1End = Math.min(dur * 0.4, 5);
         const seg2Start = Math.min(dur * 0.5, dur - 4);
         const seg2End = Math.min(seg2Start + 5, dur);
@@ -173,7 +205,43 @@ export const App: React.FC = () => {
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('ended', handleEnded);
     };
-  }, [videoSrc]);
+  }, [videoSrc, segments.length]);
+
+  // Load video directly from Community Gallery
+  const handleLoadVideoFromGallery = useCallback(async (targetUrl: string, title: string) => {
+    addToast(`Loading "${title}" into Studio Slicer...`, 'info');
+    try {
+      const proxyUrl = `/api/resolve-video?stream=1&url=${encodeURIComponent(targetUrl)}`;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error('Stream download failed');
+      const blob = await res.blob();
+      const fileName = `${title.toLowerCase().replace(/[^a-z0-9]/g, '_')}.mp4`;
+      const file = new File([blob], fileName, { type: blob.type || 'video/mp4' });
+      handleVideoSelected(file);
+      addToast(`"${title}" loaded into Studio!`, 'success');
+    } catch {
+      // Fallback direct stream loading
+      if (videoSrc && videoSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(videoSrc);
+      }
+      setVideoFile(null);
+      setVideoSrc(targetUrl);
+      setCurrentTime(0);
+      setIsPlaying(false);
+      setActiveView('studio');
+      addToast(`"${title}" loaded in streaming mode!`, 'success');
+    }
+  }, [videoSrc, handleVideoSelected, addToast]);
+
+  // Open Publish Modal
+  const handleStartPublish = useCallback(() => {
+    setPublishTarget({
+      src: videoSrc || 'https://storage.googleapis.com/producer-app-public/assets/3bcaf576-a168-476f-a7bf-14a725c10d96.mp4',
+      title: videoFile?.name || 'My LoraGi Creation',
+      duration: duration || 30,
+    });
+    setIsPublishModalOpen(true);
+  }, [videoSrc, videoFile, duration]);
 
   // Play / Pause toggle
   const handlePlayPause = useCallback(() => {
@@ -472,20 +540,35 @@ export const App: React.FC = () => {
       {/* Header */}
       <Header
         hasVideo={!!videoSrc}
+        activeView={activeView}
+        onSelectView={setActiveView}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
         onOpenInstructions={() => setIsInstructionsOpen(true)}
         onOpenMetadata={() => setIsMetadataOpen(true)}
         onOpenUrlImport={() => setIsUrlImportOpen(true)}
         onOpenOutroStudio={() => setIsOutroStudioOpen(true)}
+        onOpenObjectRemoval={() => setIsObjectRemovalOpen(true)}
+        onOpenAiGenerator={() => setIsAiGeneratorOpen(true)}
+        onOpenPublish={handleStartPublish}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
         onResetVideo={handleResetVideo}
         totalSegmentsCount={segments.filter((s) => s.enabled).length}
         totalKeptDurationFormatted={formatTime(totalKeptDuration)}
         isOutroEnabled={outroConfig.enabled}
+        activeMasksCount={objectRemovalMasks.filter((m) => m.enabled).length}
       />
 
       {/* Main Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 flex flex-col gap-6">
-        {!videoSrc ? (
+        {activeView === 'gallery' ? (
+          /* YouTube-Style Community Gallery Feed */
+          <GalleryView
+            onLoadVideoIntoEditor={handleLoadVideoFromGallery}
+            onOpenAiGenerator={() => setIsAiGeneratorOpen(true)}
+            onOpenPublish={handleStartPublish}
+            onSwitchToStudio={() => setActiveView('studio')}
+          />
+        ) : !videoSrc ? (
           /* Empty / Dropzone State */
           <Dropzone
             onVideoSelected={handleVideoSelected}
@@ -554,7 +637,7 @@ export const App: React.FC = () => {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-bio-emerald" />
-            <span>LoraGi • Bio-Digital Synthesis Video Precision Cutter</span>
+            <span>LoraGi • Bio-Digital Multi-Purpose Video Precision Cutter & AI Studio</span>
           </div>
           <div>
             Built by{' '}
@@ -581,6 +664,8 @@ export const App: React.FC = () => {
         cutMode={cutMode}
         fileName={videoFile?.name || 'loragi_cut'}
         outroConfig={outroConfig}
+        masks={objectRemovalMasks}
+        onOpenPublish={handleStartPublish}
       />
 
       <UrlImportModal
@@ -604,6 +689,57 @@ export const App: React.FC = () => {
           } else {
             addToast('Outro scene disabled', 'info');
           }
+        }}
+      />
+
+      <ObjectRemovalModal
+        isOpen={isObjectRemovalOpen}
+        onClose={() => setIsObjectRemovalOpen(false)}
+        videoSrc={videoSrc}
+        duration={duration}
+        currentTime={currentTime}
+        activeMasks={objectRemovalMasks}
+        onSaveMasks={(masks) => {
+          setObjectRemovalMasks(masks);
+          const activeCount = masks.filter((m) => m.enabled).length;
+          addToast(
+            `AI Object Removal updated (${activeCount} active inpaint mask${activeCount === 1 ? '' : 's'})`,
+            'success'
+          );
+        }}
+      />
+
+      <AiVideoGeneratorModal
+        isOpen={isAiGeneratorOpen}
+        onClose={() => setIsAiGeneratorOpen(false)}
+        onLoadIntoEditor={(file) => {
+          handleVideoSelected(file);
+          addToast(`AI Video "${file.name}" loaded into Studio!`, 'success');
+        }}
+        onPublishToGallery={(vUrl, title, dur) => {
+          setPublishTarget({ src: vUrl, title, duration: dur });
+          setIsPublishModalOpen(true);
+        }}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={() => addToast('Successfully signed in to Lorapok Labs!', 'success')}
+      />
+
+      <PublishModal
+        isOpen={isPublishModalOpen}
+        onClose={() => setIsPublishModalOpen(false)}
+        videoSrc={publishTarget.src}
+        videoFile={videoFile}
+        duration={publishTarget.duration}
+        fileName={publishTarget.title}
+        hasOutro={outroConfig.enabled}
+        hasObjectRemoval={objectRemovalMasks.length > 0}
+        onVideoPublished={(newVid) => {
+          addToast(`"${newVid.title}" published to Community Gallery!`, 'success');
+          setActiveView('gallery');
         }}
       />
 

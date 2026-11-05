@@ -1,7 +1,8 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { VideoSegment, CutMode, ExportFormat, ExportQuality, OutroConfig } from '../types';
+import { VideoSegment, CutMode, ExportFormat, ExportQuality, OutroConfig, ObjectRemovalMask } from '../types';
 import { drawBioOutroFrame } from './outroRenderer';
+import { applyObjectRemovalToCanvas } from './objectRemovalProcessor';
 
 export interface ExportInterval {
   start: number;
@@ -115,7 +116,8 @@ export async function renderIntervalToBlob(
   interval: { start: number; end: number },
   format: ExportFormat = 'webm',
   quality: ExportQuality = 'high',
-  onProgress?: (percent: number) => void
+  onProgress?: (percent: number) => void,
+  masks?: ObjectRemovalMask[]
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
@@ -213,6 +215,9 @@ export async function renderIntervalToBlob(
         }
 
         ctx.drawImage(video, 0, 0, width, height);
+        if (masks && masks.length > 0) {
+          applyObjectRemovalToCanvas(ctx, width, height, masks, video.currentTime);
+        }
 
         const currentElapsed = video.currentTime - interval.start;
         const progress = Math.min(100, Math.max(0, (currentElapsed / duration) * 100));
@@ -246,7 +251,8 @@ export async function renderMergedIntervalsToBlob(
   format: ExportFormat = 'webm',
   quality: ExportQuality = 'high',
   onProgress?: (percent: number, currentPart: number, totalParts: number) => void,
-  outroConfig?: OutroConfig
+  outroConfig?: OutroConfig,
+  masks?: ObjectRemovalMask[]
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (intervals.length === 0) {
@@ -428,6 +434,9 @@ export async function renderMergedIntervalsToBlob(
         }
 
         ctx.drawImage(video, 0, 0, width, height);
+        if (masks && masks.length > 0) {
+          applyObjectRemovalToCanvas(ctx, width, height, masks, video.currentTime);
+        }
 
         const currentPartElapsed = Math.max(0, video.currentTime - currentInterval.start);
         const totalElapsedSoFar = completedDurationBefore + currentPartElapsed;
