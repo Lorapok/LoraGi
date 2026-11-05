@@ -2,7 +2,7 @@ import React from 'react';
 
 interface LoragiLogoProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | number;
   showText?: boolean;
   subtext?: string;
 }
@@ -13,19 +13,24 @@ export const LoragiLogo: React.FC<LoragiLogoProps> = ({
   showText = false,
   subtext,
 }) => {
-  const sizeMap = {
+  const sizeMap: Record<string, string> = {
     sm: 'w-7 h-7',
     md: 'w-10 h-10',
     lg: 'w-14 h-14',
     xl: 'w-20 h-20',
   };
 
-  const iconClass = sizeMap[size] || sizeMap.md;
+  const isNumeric = typeof size === 'number';
+  const iconClass = isNumeric ? '' : sizeMap[size] || sizeMap.md;
+  const customStyle = isNumeric ? { width: `${size}px`, height: `${size}px` } : undefined;
 
   return (
     <div className={`inline-flex items-center gap-3 ${className}`}>
       {/* Bio-Digital Vector Logo Icon */}
-      <div className={`relative flex items-center justify-center ${iconClass} rounded-2xl bg-gradient-to-tr from-bio-surface to-bio-card border border-bio-emerald/40 shadow-bio-emerald p-1 group shrink-0 transition-all hover:scale-105`}>
+      <div
+        style={customStyle}
+        className={`relative flex items-center justify-center ${iconClass} rounded-2xl bg-gradient-to-tr from-bio-surface to-bio-card border border-bio-emerald/40 shadow-bio-emerald p-1 group shrink-0 transition-all hover:scale-105`}
+      >
         <svg
           viewBox="0 0 100 100"
           className="w-full h-full drop-shadow-[0_0_12px_rgba(0,245,160,0.5)]"
