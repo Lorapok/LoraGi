@@ -1,8 +1,9 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { VideoSegment, CutMode, ExportFormat, ExportQuality, OutroConfig, ObjectRemovalMask } from '../types';
+import { VideoSegment, CutMode, ExportFormat, ExportQuality, OutroConfig, ObjectRemovalMask, VideoAdjustments } from '../types';
 import { drawBioOutroFrame } from './outroRenderer';
 import { applyObjectRemovalToCanvas } from './objectRemovalProcessor';
+import { applyCanvasFilter } from './videoFilterEngine';
 
 export interface ExportInterval {
   start: number;
@@ -117,7 +118,8 @@ export async function renderIntervalToBlob(
   format: ExportFormat = 'webm',
   quality: ExportQuality = 'high',
   onProgress?: (percent: number) => void,
-  masks?: ObjectRemovalMask[]
+  masks?: ObjectRemovalMask[],
+  adjustments?: VideoAdjustments
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
@@ -214,7 +216,12 @@ export async function renderIntervalToBlob(
           return;
         }
 
+        if (adjustments) {
+          applyCanvasFilter(ctx, adjustments);
+        }
         ctx.drawImage(video, 0, 0, width, height);
+        ctx.filter = 'none';
+
         if (masks && masks.length > 0) {
           applyObjectRemovalToCanvas(ctx, width, height, masks, video.currentTime);
         }
@@ -252,7 +259,8 @@ export async function renderMergedIntervalsToBlob(
   quality: ExportQuality = 'high',
   onProgress?: (percent: number, currentPart: number, totalParts: number) => void,
   outroConfig?: OutroConfig,
-  masks?: ObjectRemovalMask[]
+  masks?: ObjectRemovalMask[],
+  adjustments?: VideoAdjustments
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (intervals.length === 0) {
@@ -433,7 +441,12 @@ export async function renderMergedIntervalsToBlob(
           return;
         }
 
+        if (adjustments) {
+          applyCanvasFilter(ctx, adjustments);
+        }
         ctx.drawImage(video, 0, 0, width, height);
+        ctx.filter = 'none';
+
         if (masks && masks.length > 0) {
           applyObjectRemovalToCanvas(ctx, width, height, masks, video.currentTime);
         }

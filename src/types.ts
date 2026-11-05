@@ -61,6 +61,25 @@ export interface ExportProgress {
   statusMessage: string;
 }
 
+export type AspectRatioMode = 'original' | '16:9' | '9:16' | '1:1' | '4:5' | '21:9';
+
+export type VideoFilterPreset =
+  | 'none'
+  | 'cyberpunk'
+  | 'portra'
+  | 'bio_emerald'
+  | 'noir'
+  | 'vibrant';
+
+export interface VideoAdjustments {
+  brightness: number; // 0.5 to 1.5, default 1
+  contrast: number;   // 0.5 to 1.5, default 1
+  saturation: number; // 0 to 2, default 1
+  vignette: boolean;
+  filter: VideoFilterPreset;
+  safeZoneOverlay: boolean;
+}
+
 export const SEGMENT_COLORS = [
   '#00f5a0', // Bio Emerald
   '#00d2ff', // Bio Cyan

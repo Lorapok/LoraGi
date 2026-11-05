@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Scissors,
   Sparkles,
@@ -19,6 +19,11 @@ import {
   Globe,
   Flame,
   Key,
+  Ratio,
+  Palette,
+  Shield,
+  Check,
+  X as XIcon,
 } from 'lucide-react';
 import { LoragiLogo } from './LoragiLogo';
 import { YoutubeIcon } from './icons/YoutubeIcon';
@@ -44,6 +49,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenApiSettings,
   onLoadSample,
 }) => {
+  const [previewRatio, setPreviewRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
+  const [previewFilter, setPreviewFilter] = useState<'none' | 'cyberpunk' | 'portra' | 'bio_emerald'>('none');
+
+  const getPreviewFilterStyle = () => {
+    switch (previewFilter) {
+      case 'cyberpunk':
+        return 'contrast(1.25) saturate(1.4) hue-rotate(-15deg)';
+      case 'portra':
+        return 'contrast(1.1) saturate(1.15) sepia(0.15)';
+      case 'bio_emerald':
+        return 'contrast(1.15) saturate(1.25) hue-rotate(25deg)';
+      default:
+        return 'none';
+    }
+  };
+
+  const getPreviewRatioClass = () => {
+    switch (previewRatio) {
+      case '9:16':
+        return 'aspect-[9/16] max-w-[280px] mx-auto';
+      case '1:1':
+        return 'aspect-square max-w-[340px] mx-auto';
+      default:
+        return 'aspect-video w-full';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-bio-deep text-slate-200 flex flex-col selection:bg-bio-cyan/30 selection:text-white">
       {/* Dynamic Background Mesh Gradients */}
@@ -134,56 +166,113 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </section>
 
-        {/* INTERACTIVE STUDIO PREVIEW CARD */}
+        {/* CANVA & ADOBE INSPIRED INTERACTIVE STUDIO PLAYGROUND */}
         <section className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full mb-28">
           <div className="relative rounded-3xl bg-bio-card/90 border border-bio-border/80 p-4 sm:p-6 shadow-2xl backdrop-blur-xl overflow-hidden group">
             {/* Ambient edge flare */}
             <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-bio-cyan to-transparent" />
 
-            {/* Simulated Studio Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-bio-border/60 mb-4">
+            {/* Studio Header Controls */}
+            <div className="flex flex-wrap items-center justify-between pb-4 border-b border-bio-border/60 mb-5 gap-3">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-bio-emerald/80 inline-block" />
-                <span className="text-xs font-mono text-slate-400 ml-2">loragi-studio // active-timeline</span>
+                <span className="text-xs font-mono text-slate-300 ml-2 font-semibold">
+                  Interactive Studio Sandbox
+                </span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-bio-emerald/10 text-bio-emerald border border-bio-emerald/30">
-                  GPU Acceleration Active
-                </span>
+              {/* Interactive Aspect Ratio & LUT Filter Pickers */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Ratio Toggles */}
+                <div className="flex items-center p-1 rounded-xl bg-bio-surface border border-bio-border text-[11px] font-mono">
+                  {(['16:9', '9:16', '1:1'] as const).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setPreviewRatio(r)}
+                      className={`px-2.5 py-1 rounded-lg transition-all ${
+                        previewRatio === r
+                          ? 'bg-bio-cyan text-bio-void font-bold shadow-sm'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+
+                {/* LUT Filter Toggles */}
+                <div className="flex items-center p-1 rounded-xl bg-bio-surface border border-bio-border text-[11px]">
+                  {[
+                    { id: 'none', label: 'Raw' },
+                    { id: 'cyberpunk', label: 'Neon' },
+                    { id: 'portra', label: 'Portra' },
+                    { id: 'bio_emerald', label: 'Bio' },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setPreviewFilter(f.id as any)}
+                      className={`px-2.5 py-1 rounded-lg transition-all ${
+                        previewFilter === f.id
+                          ? 'bg-bio-emerald text-bio-void font-bold shadow-sm'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
                 <button
                   onClick={onLoadSample}
-                  className="text-xs px-3 py-1 rounded-lg bg-bio-surface hover:bg-bio-hover border border-bio-border text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
+                  className="text-xs px-3 py-1.5 rounded-xl bg-bio-surface hover:bg-bio-hover border border-bio-border text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
                 >
-                  <Play className="w-3 h-3 text-bio-cyan" />
-                  <span>Try Interactive Demo</span>
+                  <Play className="w-3.5 h-3.5 text-bio-cyan" />
+                  <span>Launch Live Video</span>
                 </button>
               </div>
             </div>
 
             {/* Simulated Timeline & Viewport */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-              {/* Left: Video Canvas Simulation */}
-              <div className="md:col-span-7 aspect-video bg-black rounded-2xl relative overflow-hidden border border-bio-border flex items-center justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+              {/* Left: Dynamic Video Canvas Preview */}
+              <div className="md:col-span-7 bg-black rounded-2xl relative overflow-hidden border border-bio-border flex items-center justify-center p-4 min-h-[300px]">
                 <div className="absolute inset-0 bg-gradient-to-br from-bio-purple/20 via-transparent to-bio-cyan/20 pointer-events-none" />
-                
-                {/* Simulated Inpaint Box */}
-                <div className="absolute top-6 right-6 w-24 h-16 border-2 border-dashed border-bio-emerald bg-bio-emerald/10 rounded-lg flex items-center justify-center text-[10px] font-mono text-bio-emerald">
-                  AI Inpaint Box
-                </div>
 
-                <div className="text-center p-6 z-10">
-                  <LoragiLogo size={64} className="mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-white">LoraGi Precision Viewport</p>
-                  <p className="text-xs text-slate-400">Content-aware inpainting & multi-portion cutter</p>
+                {/* Dynamic Ratio Frame with live CSS Filter */}
+                <div
+                  style={{ filter: getPreviewFilterStyle() }}
+                  className={`relative rounded-xl overflow-hidden border border-bio-border/80 bg-bio-card shadow-2xl flex flex-col items-center justify-center p-6 transition-all duration-300 ${getPreviewRatioClass()}`}
+                >
+                  {/* Safe Zone Margin for 9:16 */}
+                  {previewRatio === '9:16' && (
+                    <div className="absolute inset-0 pointer-events-none border border-rose-500/40 p-2 flex flex-col justify-between font-mono text-[9px] text-rose-300">
+                      <div className="h-6 bg-rose-500/10 border-b border-rose-500/20 px-1 flex items-center">
+                        Top Safe Margin
+                      </div>
+                      <div className="h-10 bg-rose-500/10 border-t border-rose-500/20 px-1 flex items-center">
+                        Bottom Safe Margin
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Simulated Inpaint Box */}
+                  <div className="absolute top-4 right-4 w-20 h-12 border-2 border-dashed border-bio-emerald bg-bio-emerald/15 rounded-lg flex items-center justify-center text-[9px] font-mono text-bio-emerald shadow-sm">
+                    Inpaint Eraser
+                  </div>
+
+                  <LoragiLogo size={56} className="mx-auto mb-3" />
+                  <p className="text-sm font-bold text-white tracking-wide">LoraGi Precision Viewport</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Mode: {previewRatio} • Grading: {previewFilter.toUpperCase()}
+                  </p>
                 </div>
 
                 {/* Bottom Overlay Info */}
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[11px] font-mono text-slate-300 bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur-md">
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[11px] font-mono text-slate-300 bg-black/70 px-3 py-1.5 rounded-lg backdrop-blur-md">
                   <span>Portion 1: 00:00.00 – 00:04.20</span>
-                  <span className="text-bio-cyan">60 FPS • 1080p</span>
+                  <span className="text-bio-cyan">60 FPS • 1080p WebAssembly</span>
                 </div>
               </div>
 
@@ -233,10 +322,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                 <button
                   onClick={onLaunchStudio}
-                  className="w-full py-2.5 rounded-xl bg-bio-surface hover:bg-bio-hover border border-bio-cyan/40 hover:border-bio-cyan text-bio-cyan font-bold text-xs transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-bio-cyan to-bio-emerald text-slate-950 font-bold text-xs shadow-lg shadow-bio-cyan/20 hover:opacity-95 transition-all flex items-center justify-center gap-2"
                 >
                   <span>Open Full Video Studio</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-950" />
                 </button>
               </div>
             </div>
@@ -347,6 +436,103 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 Attach customizable Lorapok Biological UI credit cards, social handles, and studio watermarks onto the tail of any merged video export with customizable duration and neon themes.
               </p>
             </div>
+          </div>
+        </section>
+
+        {/* COMPARISON TABLE: LORAGI VS TRADITIONAL EDITORS */}
+        <section className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full mb-28">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-mono uppercase tracking-widest text-bio-emerald mb-2 block">
+              Architectural Comparison
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
+              Why Creators Choose LoraGi
+            </h2>
+            <p className="text-sm sm:text-base text-slate-400 mt-2">
+              How LoraGi outperforms heavy desktop suites and restrictive cloud SaaS editors.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto rounded-3xl border border-bio-border/80 bg-bio-card/90 shadow-2xl backdrop-blur-xl">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-bio-border/60 bg-bio-surface/50">
+                  <th className="p-4 sm:p-5 font-bold text-white">Feature & Capability</th>
+                  <th className="p-4 sm:p-5 font-bold text-bio-emerald bg-bio-emerald/5 border-x border-bio-emerald/20">
+                    <div className="flex items-center gap-1.5">
+                      <LoragiLogo size={20} />
+                      <span>LoraGi Studio</span>
+                    </div>
+                  </th>
+                  <th className="p-4 sm:p-5 font-bold text-slate-400">Desktop NLEs (Premiere)</th>
+                  <th className="p-4 sm:p-5 font-bold text-slate-400">Cloud Web Cutters</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-bio-border/40 text-slate-300">
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium text-white">100% Client-Side Privacy</td>
+                  <td className="p-4 sm:p-5 bg-bio-emerald/5 border-x border-bio-emerald/20 text-bio-emerald font-bold">
+                    <CheckCircle2 className="w-4 h-4 inline mr-1 text-bio-emerald" /> Yes (Zero Server Upload)
+                  </td>
+                  <td className="p-4 sm:p-5 text-slate-400">Local Disk</td>
+                  <td className="p-4 sm:p-5 text-rose-400 font-medium">No (Uploaded to Cloud Servers)</td>
+                </tr>
+
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium text-white">Direct Social API Broadcasting</td>
+                  <td className="p-4 sm:p-5 bg-bio-emerald/5 border-x border-bio-emerald/20 text-bio-emerald font-bold">
+                    <CheckCircle2 className="w-4 h-4 inline mr-1 text-bio-emerald" /> 1-Click (YouTube, X, LinkedIn)
+                  </td>
+                  <td className="p-4 sm:p-5 text-slate-400">Manual Render & Upload</td>
+                  <td className="p-4 sm:p-5 text-slate-400">Requires Heavy Paid Subscription</td>
+                </tr>
+
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium text-white">AI Caption & Hashtag Engine</td>
+                  <td className="p-4 sm:p-5 bg-bio-emerald/5 border-x border-bio-emerald/20 text-bio-emerald font-bold">
+                    <CheckCircle2 className="w-4 h-4 inline mr-1 text-bio-emerald" /> Built-In (6 Platforms)
+                  </td>
+                  <td className="p-4 sm:p-5 text-slate-400">None / External Tool Needed</td>
+                  <td className="p-4 sm:p-5 text-slate-400">Third-Party Add-on</td>
+                </tr>
+
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium text-white">AI Object & Watermark Removal</td>
+                  <td className="p-4 sm:p-5 bg-bio-emerald/5 border-x border-bio-emerald/20 text-bio-emerald font-bold">
+                    <CheckCircle2 className="w-4 h-4 inline mr-1 text-bio-emerald" /> 3 Inpainting Models Included
+                  </td>
+                  <td className="p-4 sm:p-5 text-slate-400">Requires After Effects Plugin</td>
+                  <td className="p-4 sm:p-5 text-slate-400">High Token Cost / Watermarked</td>
+                </tr>
+
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium text-white">Flow Music Sound Synthesis</td>
+                  <td className="p-4 sm:p-5 bg-bio-emerald/5 border-x border-bio-emerald/20 text-bio-emerald font-bold">
+                    <CheckCircle2 className="w-4 h-4 inline mr-1 text-bio-emerald" /> 100% Free Built-In
+                  </td>
+                  <td className="p-4 sm:p-5 text-slate-400">Stock Music Library Paid</td>
+                  <td className="p-4 sm:p-5 text-slate-400">Paid Add-on</td>
+                </tr>
+
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium text-white">Rendering Speed & Queue</td>
+                  <td className="p-4 sm:p-5 bg-bio-emerald/5 border-x border-bio-emerald/20 text-bio-emerald font-bold">
+                    <CheckCircle2 className="w-4 h-4 inline mr-1 text-bio-emerald" /> Instant Native GPU
+                  </td>
+                  <td className="p-4 sm:p-5 text-slate-400">Heavy CPU Render Time</td>
+                  <td className="p-4 sm:p-5 text-slate-400">Cloud Render Queue Wait</td>
+                </tr>
+
+                <tr>
+                  <td className="p-4 sm:p-5 font-medium text-white">Subscription Cost</td>
+                  <td className="p-4 sm:p-5 bg-bio-emerald/5 border-x border-bio-emerald/20 text-bio-emerald font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-bio-emerald/20 text-bio-emerald text-[11px]">Free & Open-Source</span>
+                  </td>
+                  <td className="p-4 sm:p-5 text-slate-400">$35 – $60 / month</td>
+                  <td className="p-4 sm:p-5 text-slate-400">$20 – $40 / month</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 
