@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Header } from './components/Header';
+import { Header, AppViewMode } from './components/Header';
 import { Dropzone } from './components/Dropzone';
 import { VideoPlayer } from './components/VideoPlayer';
 import { Timeline } from './components/Timeline';
@@ -11,10 +11,15 @@ import { MetadataDrawer } from './components/MetadataDrawer';
 import { UrlImportModal } from './components/UrlImportModal';
 import { OutroStudioModal } from './components/OutroStudioModal';
 import { GalleryView } from './components/GalleryView';
+import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
 import { PublishModal } from './components/PublishModal';
 import { AiVideoGeneratorModal } from './components/AiVideoGeneratorModal';
 import { ObjectRemovalModal } from './components/ObjectRemovalModal';
+import { AiCaptionWriterModal } from './components/AiCaptionWriterModal';
+import { DirectPublishModal } from './components/DirectPublishModal';
+import { ApiSettingsModal } from './components/ApiSettingsModal';
+import { SocialPlatform } from './utils/aiCaptionEngine';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import {
   VideoSegment,
@@ -29,7 +34,7 @@ import { generateSampleVideo } from './utils/sampleGenerator';
 import { computeEffectiveIntervals } from './utils/videoProcessor';
 
 export const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<'studio' | 'gallery'>('studio');
+  const [activeView, setActiveView] = useState<AppViewMode>('landing');
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -53,6 +58,20 @@ export const App: React.FC = () => {
   const [isPublishModalOpen, setIsPublishModalOpen] = useState<boolean>(false);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState<boolean>(false);
   const [isObjectRemovalOpen, setIsObjectRemovalOpen] = useState<boolean>(false);
+  const [isAiCaptionsOpen, setIsAiCaptionsOpen] = useState<boolean>(false);
+  const [isDirectPublishOpen, setIsDirectPublishOpen] = useState<boolean>(false);
+  const [isApiSettingsOpen, setIsApiSettingsOpen] = useState<boolean>(false);
+
+  // Direct Publish data payload
+  const [directPublishData, setDirectPublishData] = useState<{
+    caption: string;
+    title: string;
+    platform: SocialPlatform;
+  }>({
+    caption: '',
+    title: 'My LoraGi Creation',
+    platform: 'twitter',
+  });
 
   // Object Removal inpainting masks
   const [objectRemovalMasks, setObjectRemovalMasks] = useState<ObjectRemovalMask[]>([]);
@@ -549,6 +568,9 @@ export const App: React.FC = () => {
         onOpenOutroStudio={() => setIsOutroStudioOpen(true)}
         onOpenObjectRemoval={() => setIsObjectRemovalOpen(true)}
         onOpenAiGenerator={() => setIsAiGeneratorOpen(true)}
+        onOpenAiCaptions={() => setIsAiCaptionsOpen(true)}
+        onOpenDirectPublish={() => setIsDirectPublishOpen(true)}
+        onOpenApiSettings={() => setIsApiSettingsOpen(true)}
         onOpenPublish={handleStartPublish}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onResetVideo={handleResetVideo}
@@ -558,101 +580,116 @@ export const App: React.FC = () => {
         activeMasksCount={objectRemovalMasks.filter((m) => m.enabled).length}
       />
 
-      {/* Main Workspace */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 flex flex-col gap-6">
-        {activeView === 'gallery' ? (
-          /* YouTube-Style Community Gallery Feed */
-          <GalleryView
-            onLoadVideoIntoEditor={handleLoadVideoFromGallery}
-            onOpenAiGenerator={() => setIsAiGeneratorOpen(true)}
-            onOpenPublish={handleStartPublish}
-            onSwitchToStudio={() => setActiveView('studio')}
-          />
-        ) : !videoSrc ? (
-          /* Empty / Dropzone State */
-          <Dropzone
-            onVideoSelected={handleVideoSelected}
-            onLoadSample={handleLoadSample}
-            onOpenUrlImport={() => setIsUrlImportOpen(true)}
-            onOpenInstructions={() => setIsInstructionsOpen(true)}
-            isLoadingSample={isLoadingSample}
-          />
-        ) : (
-          /* Active Editing Workspace */
-          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
-            {/* Left 8 Columns: Video Player & Interactive Timeline */}
-            <div className="w-full lg:col-span-8 flex flex-col gap-5">
-              <VideoPlayer
-                videoRef={videoRef}
-                videoSrc={videoSrc}
-                currentTime={currentTime}
-                duration={duration}
-                isPlaying={isPlaying}
-                onPlayPause={handlePlayPause}
-                onSeek={handleSeek}
-                onSetInPoint={handleSetInPoint}
-                onSetOutPoint={handleSetOutPoint}
-                onSplitAtPlayhead={handleSplitAtPlayhead}
-                onNotify={addToast}
-                fileName={videoFile?.name || 'video'}
-              />
+      {/* Main Workspace or Landing Page */}
+      {activeView === 'landing' ? (
+        <LandingPage
+          onLaunchStudio={() => setActiveView('studio')}
+          onExploreGallery={() => setActiveView('gallery')}
+          onOpenAiCaptions={() => setIsAiCaptionsOpen(true)}
+          onOpenAiGenerator={() => setIsAiGeneratorOpen(true)}
+          onOpenObjectRemoval={() => setIsObjectRemovalOpen(true)}
+          onOpenDirectPublish={() => setIsDirectPublishOpen(true)}
+          onOpenApiSettings={() => setIsApiSettingsOpen(true)}
+          onLoadSample={handleLoadSample}
+        />
+      ) : (
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 flex flex-col gap-6">
+          {activeView === 'gallery' ? (
+            /* YouTube-Style Community Gallery Feed */
+            <GalleryView
+              onLoadVideoIntoEditor={handleLoadVideoFromGallery}
+              onOpenAiGenerator={() => setIsAiGeneratorOpen(true)}
+              onOpenPublish={handleStartPublish}
+              onSwitchToStudio={() => setActiveView('studio')}
+            />
+          ) : !videoSrc ? (
+            /* Empty / Dropzone State */
+            <Dropzone
+              onVideoSelected={handleVideoSelected}
+              onLoadSample={handleLoadSample}
+              onOpenUrlImport={() => setIsUrlImportOpen(true)}
+              onOpenInstructions={() => setIsInstructionsOpen(true)}
+              isLoadingSample={isLoadingSample}
+            />
+          ) : (
+            /* Active Editing Workspace */
+            <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
+              {/* Left 8 Columns: Video Player & Interactive Timeline */}
+              <div className="w-full lg:col-span-8 flex flex-col gap-5">
+                <VideoPlayer
+                  videoRef={videoRef}
+                  videoSrc={videoSrc}
+                  currentTime={currentTime}
+                  duration={duration}
+                  isPlaying={isPlaying}
+                  onPlayPause={handlePlayPause}
+                  onSeek={handleSeek}
+                  onSetInPoint={handleSetInPoint}
+                  onSetOutPoint={handleSetOutPoint}
+                  onSplitAtPlayhead={handleSplitAtPlayhead}
+                  onNotify={addToast}
+                  fileName={videoFile?.name || 'video'}
+                />
 
-              <Timeline
-                duration={duration}
-                currentTime={currentTime}
-                segments={segments}
-                selectedSegmentId={selectedSegmentId}
-                onSelectSegment={setSelectedSegmentId}
-                onUpdateSegment={handleUpdateSegment}
-                onAddSegment={handleAddSegment}
-                onSeek={handleSeek}
-                videoSrc={videoSrc}
-              />
+                <Timeline
+                  duration={duration}
+                  currentTime={currentTime}
+                  segments={segments}
+                  selectedSegmentId={selectedSegmentId}
+                  onSelectSegment={setSelectedSegmentId}
+                  onUpdateSegment={handleUpdateSegment}
+                  onAddSegment={handleAddSegment}
+                  onSeek={handleSeek}
+                  videoSrc={videoSrc}
+                />
+              </div>
+
+              {/* Right 4 Columns: Segments Manager & Cut Modes */}
+              <div className="w-full lg:col-span-4 flex flex-col gap-5">
+                <SegmentsList
+                  segments={segments}
+                  selectedSegmentId={selectedSegmentId}
+                  onSelectSegment={setSelectedSegmentId}
+                  onUpdateSegment={handleUpdateSegment}
+                  onDeleteSegment={handleDeleteSegment}
+                  onDuplicateSegment={handleDuplicateSegment}
+                  onPreviewSegment={handlePreviewSegment}
+                  cutMode={cutMode}
+                  onToggleCutMode={setCutMode}
+                  onOpenExportModal={() => setIsExportModalOpen(true)}
+                  onOpenOutroStudio={() => setIsOutroStudioOpen(true)}
+                  isOutroEnabled={outroConfig.enabled}
+                  totalKeptDuration={totalKeptDuration}
+                />
+              </div>
             </div>
+          )}
+        </main>
+      )}
 
-            {/* Right 4 Columns: Segments Manager & Cut Modes */}
-            <div className="w-full lg:col-span-4 flex flex-col gap-5">
-              <SegmentsList
-                segments={segments}
-                selectedSegmentId={selectedSegmentId}
-                onSelectSegment={setSelectedSegmentId}
-                onUpdateSegment={handleUpdateSegment}
-                onDeleteSegment={handleDeleteSegment}
-                onDuplicateSegment={handleDuplicateSegment}
-                onPreviewSegment={handlePreviewSegment}
-                cutMode={cutMode}
-                onToggleCutMode={setCutMode}
-                onOpenExportModal={() => setIsExportModalOpen(true)}
-                onOpenOutroStudio={() => setIsOutroStudioOpen(true)}
-                isOutroEnabled={outroConfig.enabled}
-                totalKeptDuration={totalKeptDuration}
-              />
+      {/* Footer (for studio and gallery views) */}
+      {activeView !== 'landing' && (
+        <footer className="w-full border-t border-bio-border/60 bg-bio-void py-6 px-4 text-center">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-bio-emerald" />
+              <span>LoraGi • Bio-Digital Multi-Purpose Video Precision Cutter & AI Studio</span>
+            </div>
+            <div>
+              Built by{' '}
+              <a
+                href="https://lorapok.tech"
+                target="_blank"
+                rel="noreferrer"
+                className="text-bio-cyan hover:underline font-semibold"
+              >
+                Lorapok Labs
+              </a>{' '}
+              • Open-Source Products That Feel Alive
             </div>
           </div>
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="w-full border-t border-bio-border/60 bg-bio-void py-6 px-4 text-center">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-bio-emerald" />
-            <span>LoraGi • Bio-Digital Multi-Purpose Video Precision Cutter & AI Studio</span>
-          </div>
-          <div>
-            Built by{' '}
-            <a
-              href="https://lorapok.tech"
-              target="_blank"
-              rel="noreferrer"
-              className="text-bio-cyan hover:underline font-semibold"
-            >
-              Lorapok Labs
-            </a>{' '}
-            • Open-Source Products That Feel Alive
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
 
       {/* Modals */}
       <ExportModal
@@ -741,6 +778,36 @@ export const App: React.FC = () => {
           addToast(`"${newVid.title}" published to Community Gallery!`, 'success');
           setActiveView('gallery');
         }}
+      />
+
+      <AiCaptionWriterModal
+        isOpen={isAiCaptionsOpen}
+        onClose={() => setIsAiCaptionsOpen(false)}
+        videoTitle={videoFile?.name || publishTarget.title}
+        durationSeconds={duration || publishTarget.duration}
+        segments={segments}
+        videoSrc={videoSrc}
+        onOpenDirectPublish={(caption, title, platform) => {
+          setDirectPublishData({ caption, title, platform });
+          setIsDirectPublishOpen(true);
+        }}
+        onOpenApiSettings={() => setIsApiSettingsOpen(true)}
+      />
+
+      <DirectPublishModal
+        isOpen={isDirectPublishOpen}
+        onClose={() => setIsDirectPublishOpen(false)}
+        videoTitle={directPublishData.title || videoFile?.name || publishTarget.title}
+        initialCaption={directPublishData.caption}
+        videoSrc={videoSrc || publishTarget.src}
+        onOpenApiSettings={() => setIsApiSettingsOpen(true)}
+        onOpenAiCaptions={() => setIsAiCaptionsOpen(true)}
+      />
+
+      <ApiSettingsModal
+        isOpen={isApiSettingsOpen}
+        onClose={() => setIsApiSettingsOpen(false)}
+        onSaved={() => addToast('API Vault credentials updated in local storage!', 'success')}
       />
 
       <InstructionsModal
