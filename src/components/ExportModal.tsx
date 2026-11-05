@@ -11,7 +11,7 @@ import {
   Loader2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { VideoSegment, CutMode, ExportFormat, ExportQuality, ExportType, OutroConfig, ObjectRemovalMask } from '../types';
+import { VideoSegment, CutMode, ExportFormat, ExportQuality, ExportType, OutroConfig, ObjectRemovalMask, VideoAdjustments } from '../types';
 import {
   computeEffectiveIntervals,
   renderIntervalToBlob,
@@ -31,6 +31,7 @@ interface ExportModalProps {
   fileName: string;
   outroConfig?: OutroConfig;
   masks?: ObjectRemovalMask[];
+  adjustments?: VideoAdjustments;
   onOpenPublish?: () => void;
 }
 
@@ -44,6 +45,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   fileName,
   outroConfig,
   masks,
+  adjustments,
   onOpenPublish,
 }) => {
   const [exportType, setExportType] = useState<ExportType>('merged');
@@ -81,7 +83,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             setStatusMessage(`Rendering and stitching part ${part} of ${total} (${Math.round(pct)}%)...`);
           },
           outroConfig,
-          masks
+          masks,
+          adjustments
         );
 
         setStatusMessage('Generating download...');
@@ -103,7 +106,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               const overallPct = Math.round(((i + pct / 100) / intervals.length) * 100);
               setProgressPercent(overallPct);
             },
-            masks
+            masks,
+            adjustments
           );
 
           blobsToDownload.push({
@@ -133,7 +137,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               const overallPct = Math.round(((i + pct / 100) / intervals.length) * 100);
               setProgressPercent(overallPct);
             },
-            masks
+            masks,
+            adjustments
           );
 
           renderedPortions.push({

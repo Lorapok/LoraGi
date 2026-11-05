@@ -19,6 +19,7 @@ import { ObjectRemovalModal } from './components/ObjectRemovalModal';
 import { AiCaptionWriterModal } from './components/AiCaptionWriterModal';
 import { DirectPublishModal } from './components/DirectPublishModal';
 import { ApiSettingsModal } from './components/ApiSettingsModal';
+import { ColorGradingModal } from './components/ColorGradingModal';
 import { SocialPlatform } from './utils/aiCaptionEngine';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import {
@@ -28,6 +29,8 @@ import {
   SEGMENT_COLORS,
   OutroConfig,
   ObjectRemovalMask,
+  AspectRatioMode,
+  VideoAdjustments,
 } from './types';
 import { formatTime } from './utils/timeFormat';
 import { generateSampleVideo } from './utils/sampleGenerator';
@@ -61,6 +64,18 @@ export const App: React.FC = () => {
   const [isAiCaptionsOpen, setIsAiCaptionsOpen] = useState<boolean>(false);
   const [isDirectPublishOpen, setIsDirectPublishOpen] = useState<boolean>(false);
   const [isApiSettingsOpen, setIsApiSettingsOpen] = useState<boolean>(false);
+  const [isColorGradingOpen, setIsColorGradingOpen] = useState<boolean>(false);
+
+  // Canva / Adobe Pro Aspect Ratio & Color Adjustments
+  const [aspectRatio, setAspectRatio] = useState<AspectRatioMode>('original');
+  const [videoAdjustments, setVideoAdjustments] = useState<VideoAdjustments>({
+    brightness: 1,
+    contrast: 1,
+    saturation: 1,
+    vignette: false,
+    filter: 'none',
+    safeZoneOverlay: false,
+  });
 
   // Direct Publish data payload
   const [directPublishData, setDirectPublishData] = useState<{
@@ -629,6 +644,16 @@ export const App: React.FC = () => {
                   onSplitAtPlayhead={handleSplitAtPlayhead}
                   onNotify={addToast}
                   fileName={videoFile?.name || 'video'}
+                  aspectRatio={aspectRatio}
+                  onSelectAspectRatio={setAspectRatio}
+                  adjustments={videoAdjustments}
+                  onOpenColorGrading={() => setIsColorGradingOpen(true)}
+                  onToggleSafeZone={() =>
+                    setVideoAdjustments((prev) => ({
+                      ...prev,
+                      safeZoneOverlay: !prev.safeZoneOverlay,
+                    }))
+                  }
                 />
 
                 <Timeline
@@ -702,7 +727,26 @@ export const App: React.FC = () => {
         fileName={videoFile?.name || 'loragi_cut'}
         outroConfig={outroConfig}
         masks={objectRemovalMasks}
+        adjustments={videoAdjustments}
         onOpenPublish={handleStartPublish}
+      />
+
+      <ColorGradingModal
+        isOpen={isColorGradingOpen}
+        onClose={() => setIsColorGradingOpen(false)}
+        adjustments={videoAdjustments}
+        onChangeAdjustments={setVideoAdjustments}
+        onReset={() => {
+          setVideoAdjustments({
+            brightness: 1,
+            contrast: 1,
+            saturation: 1,
+            vignette: false,
+            filter: 'none',
+            safeZoneOverlay: false,
+          });
+          addToast('Color adjustments reset to natural defaults', 'info');
+        }}
       />
 
       <UrlImportModal
